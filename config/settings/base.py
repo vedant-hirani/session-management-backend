@@ -77,17 +77,46 @@ _sslmode = os.environ.get("POSTGRES_SSLMODE", "require")
 if _sslmode:
     _db_options["sslmode"] = _sslmode
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "postgres"),
-        "USER": os.environ.get("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        "OPTIONS": _db_options,
+if os.environ.get("DATABASE_URL"):
+    try:
+        import dj_database_url
+        DATABASES = {
+            "default": dj_database_url.config(
+                default=os.environ.get("DATABASE_URL"),
+                conn_max_age=600,
+            )
+        }
+        if "OPTIONS" not in DATABASES["default"]:
+            DATABASES["default"]["OPTIONS"] = {}
+        if _sslmode:
+            DATABASES["default"]["OPTIONS"]["sslmode"] = _sslmode
+    except ImportError:
+        import urllib.parse
+        parsed = urllib.parse.urlparse(os.environ.get("DATABASE_URL"))
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": parsed.path.lstrip("/"),
+                "USER": parsed.username or "postgres",
+                "PASSWORD": parsed.password or "",
+                "HOST": parsed.hostname or "localhost",
+                "PORT": str(parsed.port) if parsed.port else "5432",
+                "OPTIONS": _db_options,
+            }
+        }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "postgres"),
+            "USER": os.environ.get("POSTGRES_USER", "postgres"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+            "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "OPTIONS": _db_options,
+        }
     }
-}
+
 
 # --- Auth ---
 AUTH_USER_MODEL = "accounts.User"
