@@ -8,10 +8,14 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 # Allow frontend dev server
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+cors_origins_env = os.environ.get("CORS_ALLOWED_ORIGINS")
+if cors_origins_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 CORS_ALLOW_CREDENTIALS = True
 
 # Verbose logging in dev
