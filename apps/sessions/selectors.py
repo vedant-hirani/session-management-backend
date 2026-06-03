@@ -2,15 +2,21 @@
 Database query functions for the sessions app.
 All ORM queries live here, not in views or services.
 """
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Count, Q
 
-from apps.common.constants import SESSION_PUBLISHED
+from apps.common.constants import SESSION_PUBLISHED, BOOKING_CONFIRMED
 from .models import Session
 
 
 def get_published_sessions(filters: dict = None) -> QuerySet:
-    """Return all published sessions, optionally filtered."""
+    """Return all published sessions, optionally filtered, annotated with booking counts."""
     qs = Session.objects.filter(status=SESSION_PUBLISHED, is_deleted=False).select_related("creator")
+    qs = qs.annotate(
+        confirmed_bookings_count=Count(
+            "bookings",
+            filter=Q(bookings__status=BOOKING_CONFIRMED)
+        )
+    )
     if filters:
         if tag := filters.get("tag"):
             qs = qs.filter(tags__contains=[tag])
@@ -27,12 +33,31 @@ def get_published_sessions(filters: dict = None) -> QuerySet:
 
 def get_session_by_id(session_id: int) -> Session:
     """Return a single session by PK, or raise DoesNotExist."""
-    return Session.objects.filter(is_deleted=False).select_related("creator").get(pk=session_id)
+    return (
+        Session.objects.filter(is_deleted=False)
+        .select_related("creator")
+        .annotate(
+            confirmed_bookings_count=Count(
+                "bookings",
+                filter=Q(bookings__status=BOOKING_CONFIRMED)
+            )
+        )
+        .get(pk=session_id)
+    )
 
 
 def get_creator_sessions(creator) -> QuerySet:
-    """Return all sessions owned by a creator (any status)."""
-    return Session.objects.filter(creator=creator, is_deleted=False).order_by("-created_at")
+    """Return all sessions owned by a creator (any status) annotated with booking counts."""
+    return (
+        Session.objects.filter(creator=creator, is_deleted=False)
+        .annotate(
+            confirmed_bookings_count=Count(
+                "bookings",
+                filter=Q(bookings__status=BOOKING_CONFIRMED)
+            )
+        )
+        .order_by("-created_at")
+    )
 
 
 def get_deleted_sessions(creator) -> QuerySet:

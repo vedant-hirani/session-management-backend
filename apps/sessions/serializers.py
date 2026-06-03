@@ -10,7 +10,7 @@ from .models import Session
 class SessionListSerializer(serializers.ModelSerializer):
     """Compact serializer for catalog listing."""
     creator = UserPublicSerializer(read_only=True)
-    spots_remaining = serializers.IntegerField(read_only=True)
+    spots_remaining = serializers.SerializerMethodField()
     is_available = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -30,12 +30,20 @@ class SessionListSerializer(serializers.ModelSerializer):
             "is_available",
         ]
 
+    def get_spots_remaining(self, obj):
+        confirmed_count = getattr(obj, "confirmed_bookings_count", None)
+        if confirmed_count is None:
+            from apps.common.constants import BOOKING_CONFIRMED
+            confirmed_count = obj.bookings.filter(status=BOOKING_CONFIRMED).count()
+        return max(0, obj.max_attendees - confirmed_count)
+
 
 class SessionDetailSerializer(serializers.ModelSerializer):
     """Full detail serializer including description."""
     creator = UserPublicSerializer(read_only=True)
-    spots_remaining = serializers.IntegerField(read_only=True)
+    spots_remaining = serializers.SerializerMethodField()
     is_available = serializers.BooleanField(read_only=True)
+    already_booked = serializers.SerializerMethodField()
 
     class Meta:
         model = Session
@@ -53,9 +61,27 @@ class SessionDetailSerializer(serializers.ModelSerializer):
             "creator",
             "spots_remaining",
             "is_available",
+            "already_booked",
             "created_at",
             "updated_at",
         ]
+
+    def get_spots_remaining(self, obj):
+        confirmed_count = getattr(obj, "confirmed_bookings_count", None)
+        if confirmed_count is None:
+            from apps.common.constants import BOOKING_CONFIRMED
+            confirmed_count = obj.bookings.filter(status=BOOKING_CONFIRMED).count()
+        return max(0, obj.max_attendees - confirmed_count)
+
+    def get_already_booked(self, obj):
+        request = self.context.get("request")
+        if request and request.user and request.user.is_authenticated:
+            from apps.bookings.models import Booking
+            from apps.common.constants import BOOKING_CONFIRMED
+            return Booking.objects.filter(
+                user=request.user, session=obj, status=BOOKING_CONFIRMED
+            ).exists()
+        return False
 
 
 class SessionWriteSerializer(serializers.ModelSerializer):

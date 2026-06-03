@@ -31,9 +31,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "role",
             "avatar",
             "bio",
+            "wallet_balance",
             "date_joined",
         ]
-        read_only_fields = ["id", "email", "role", "date_joined"]
+        read_only_fields = ["id", "email", "role", "wallet_balance", "date_joined"]
 
     def validate_username(self, value):
         user = self.context["request"].user

@@ -28,8 +28,3 @@ class BookingSerializer(serializers.ModelSerializer):
             "payment_reference",
         ]
         read_only_fields = ["id", "status", "booked_at", "updated_at", "payment_reference"]
-
-
-class BookingStatusSerializer(serializers.Serializer):
-    """Used to update the booking status (cancel)."""
-    status = serializers.ChoiceField(choices=["cancelled"])

@@ -119,6 +119,14 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
     ),
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "apps.common.throttling.CustomAnonRateThrottle",
+        "apps.common.throttling.CustomUserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "300/15m",
+        "user": "300/15m",
+    },
 }
 
 # --- JWT ---

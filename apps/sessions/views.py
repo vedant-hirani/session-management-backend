@@ -13,6 +13,7 @@ from .serializers import SessionListSerializer, SessionDetailSerializer, Session
 from .services import create_session, update_session, cancel_session, delete_session
 from .permissions import IsSessionCreatorOrReadOnly
 from apps.common.pagination import StandardResultsPagination
+from apps.common.constants import MSG_ONLY_CREATORS, MSG_SESSION_NOT_FOUND
 
 
 class SessionCatalogView(APIView):
@@ -41,7 +42,7 @@ class SessionCatalogView(APIView):
     def post(self, request):
         if not request.user.is_authenticated or not request.user.is_creator:
             return Response(
-                {"detail": "Only creators can create sessions."},
+                {"detail": MSG_ONLY_CREATORS},
                 status=status.HTTP_403_FORBIDDEN,
             )
         serializer = SessionWriteSerializer(data=request.data)
@@ -70,14 +71,14 @@ class SessionDetailView(APIView):
     def get(self, request, pk):
         session = self._get_session(pk)
         if not session:
-            return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         serializer = SessionDetailSerializer(session, context={"request": request})
         return Response(serializer.data)
 
     def patch(self, request, pk):
         session = self._get_session(pk)
         if not session:
-            return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         serializer = SessionWriteSerializer(session, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated = update_session(session, request.user, serializer.validated_data)
@@ -86,7 +87,7 @@ class SessionDetailView(APIView):
     def delete(self, request, pk):
         session = self._get_session(pk)
         if not session:
-            return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         delete_session(session, request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -115,6 +116,6 @@ class CancelSessionView(APIView):
         try:
             session = get_session_by_id(pk)
         except Session.DoesNotExist:
-            return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         cancelled = cancel_session(session, request.user)
         return Response(SessionDetailSerializer(cancelled, context={"request": request}).data)

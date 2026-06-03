@@ -4,7 +4,7 @@ Session model — a bookable session created by a Creator.
 from django.db import models
 from django.conf import settings
 
-from apps.common.constants import SESSION_STATUS_CHOICES, SESSION_PUBLISHED
+from apps.common.constants import SESSION_STATUS_CHOICES, SESSION_PUBLISHED, BOOKING_CONFIRMED
 
 
 class Session(models.Model):
@@ -45,7 +45,7 @@ class Session(models.Model):
 
     @property
     def spots_remaining(self):
-        confirmed = self.bookings.filter(status="confirmed").count()
+        confirmed = self.bookings.filter(status=BOOKING_CONFIRMED).count()
         return max(0, self.max_attendees - confirmed)
 
     @property

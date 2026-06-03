@@ -82,6 +82,9 @@ class OAuthSetupView(APIView):
         )
 
 
+from apps.common.constants import MSG_REFRESH_TOKEN_REQUIRED, MSG_INVALID_TOKEN, MSG_LOGGED_OUT
+
+
 class LogoutView(APIView):
     """Blacklist the refresh token to log out."""
     permission_classes = [IsAuthenticated]
@@ -90,16 +93,16 @@ class LogoutView(APIView):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response(
-                {"detail": "Refresh token is required."},
+                {"detail": MSG_REFRESH_TOKEN_REQUIRED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         success = blacklist_refresh_token(refresh_token)
         if not success:
             return Response(
-                {"detail": "Invalid or expired token."},
+                {"detail": MSG_INVALID_TOKEN},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+        return Response({"detail": MSG_LOGGED_OUT}, status=status.HTTP_200_OK)
 
 
 class ProfileView(APIView):

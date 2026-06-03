@@ -10,9 +10,15 @@ from core.permissions import IsCreator
 from apps.sessions.models import Session
 from .models import Booking
 from .selectors import get_user_bookings, get_booking_by_id, get_creator_bookings
-from .serializers import BookingSerializer, BookingStatusSerializer
+from .serializers import BookingSerializer
 from .services import create_booking, cancel_booking
 from apps.common.pagination import StandardResultsPagination
+from apps.common.constants import (
+    MSG_SESSION_ID_REQUIRED,
+    MSG_SESSION_NOT_FOUND,
+    MSG_BOOKING_NOT_FOUND,
+    MSG_NOT_AUTHORIZED,
+)
 
 
 class UserBookingsView(APIView):
@@ -35,13 +41,13 @@ class UserBookingsView(APIView):
         session_id = request.data.get("session_id")
         if not session_id:
             return Response(
-                {"detail": "session_id is required."},
+                {"detail": MSG_SESSION_ID_REQUIRED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
             session = Session.objects.get(pk=session_id)
         except Session.DoesNotExist:
-            return Response({"detail": "Session not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
         booking = create_booking(request.user, session)
         return Response(
@@ -61,9 +67,9 @@ class BookingDetailView(APIView):
         try:
             booking = get_booking_by_id(pk)
         except Booking.DoesNotExist:
-            return None, Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+            return None, Response({"detail": MSG_BOOKING_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         if booking.user != user:
-            return None, Response({"detail": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
+            return None, Response({"detail": MSG_NOT_AUTHORIZED}, status=status.HTTP_403_FORBIDDEN)
         return booking, None
 
     def get(self, request, pk):
@@ -83,7 +89,7 @@ class CancelBookingView(APIView):
         try:
             booking = get_booking_by_id(pk)
         except Booking.DoesNotExist:
-            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": MSG_BOOKING_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
 
         cancelled = cancel_booking(booking, request.user)
         return Response(BookingSerializer(cancelled, context={"request": request}).data)
