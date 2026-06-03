@@ -12,18 +12,27 @@ def create_booking(user, session: Session) -> Booking:
     """
     Book a session for a user.
     Validates:
-    - Session must be published
+    - Session must be published and not deleted
     - Spots must be available
-    - User must not have already booked the same session
+    - User must not have an active (confirmed) booking for this session
+      (cancelled bookings are ignored — user can re-book after cancelling)
     """
-    if session.status != SESSION_PUBLISHED:
+    if session.is_deleted or session.status != SESSION_PUBLISHED:
         raise ValidationError("This session is not available for booking.")
 
     if session.spots_remaining <= 0:
         raise ValidationError("This session is fully booked.")
 
-    if Booking.objects.filter(user=user, session=session).exists():
+    # Only block if there's already a confirmed booking — cancelled ones are fine
+    if Booking.objects.filter(user=user, session=session, status=BOOKING_CONFIRMED).exists():
         raise ValidationError("You have already booked this session.")
+
+    # If a cancelled booking exists, reuse it instead of creating a duplicate
+    existing = Booking.objects.filter(user=user, session=session).first()
+    if existing:
+        existing.status = BOOKING_CONFIRMED
+        existing.save(update_fields=["status"])
+        return existing
 
     booking = Booking.objects.create(
         user=user,
