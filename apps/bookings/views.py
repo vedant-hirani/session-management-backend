@@ -7,13 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsCreator
-from apps.sessions.models import Session
+from ..sessions.models import Session
 from .models import Booking
 from .selectors import get_user_bookings, get_booking_by_id, get_creator_bookings
 from .serializers import BookingSerializer
 from .services import create_booking, cancel_booking
-from apps.common.pagination import StandardResultsPagination
-from apps.common.constants import (
+from ..common.pagination import StandardResultsPagination
+from ..common.constants import (
     MSG_SESSION_ID_REQUIRED,
     MSG_SESSION_NOT_FOUND,
     MSG_BOOKING_NOT_FOUND,

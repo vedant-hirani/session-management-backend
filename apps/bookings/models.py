@@ -4,7 +4,7 @@ Booking model — records a user booking a session.
 from django.db import models
 from django.conf import settings
 
-from apps.common.constants import BOOKING_STATUS_CHOICES, BOOKING_CONFIRMED
+from ..common.constants import BOOKING_STATUS_CHOICES, BOOKING_CONFIRMED
 
 
 class Booking(models.Model):

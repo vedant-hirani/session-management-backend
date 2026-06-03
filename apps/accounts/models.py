@@ -4,7 +4,7 @@ Custom User model with role support.
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from apps.common.constants import ROLE_USER, ROLE_CHOICES
+from ..common.constants import ROLE_USER, ROLE_CHOICES
 
 
 class User(AbstractUser):

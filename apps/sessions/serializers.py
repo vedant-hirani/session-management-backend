@@ -3,7 +3,7 @@ Serializers for the sessions app.
 """
 from rest_framework import serializers
 
-from apps.accounts.serializers import UserPublicSerializer
+from ..accounts.serializers import UserPublicSerializer
 from .models import Session
 
 
@@ -33,7 +33,7 @@ class SessionListSerializer(serializers.ModelSerializer):
     def get_spots_remaining(self, obj):
         confirmed_count = getattr(obj, "confirmed_bookings_count", None)
         if confirmed_count is None:
-            from apps.common.constants import BOOKING_CONFIRMED
+            from ..common.constants import BOOKING_CONFIRMED
             confirmed_count = obj.bookings.filter(status=BOOKING_CONFIRMED).count()
         return max(0, obj.max_attendees - confirmed_count)
 
@@ -69,15 +69,15 @@ class SessionDetailSerializer(serializers.ModelSerializer):
     def get_spots_remaining(self, obj):
         confirmed_count = getattr(obj, "confirmed_bookings_count", None)
         if confirmed_count is None:
-            from apps.common.constants import BOOKING_CONFIRMED
+            from ..common.constants import BOOKING_CONFIRMED
             confirmed_count = obj.bookings.filter(status=BOOKING_CONFIRMED).count()
         return max(0, obj.max_attendees - confirmed_count)
 
     def get_already_booked(self, obj):
         request = self.context.get("request")
         if request and request.user and request.user.is_authenticated:
-            from apps.bookings.models import Booking
-            from apps.common.constants import BOOKING_CONFIRMED
+            from ..bookings.models import Booking
+            from ..common.constants import BOOKING_CONFIRMED
             return Booking.objects.filter(
                 user=request.user, session=obj, status=BOOKING_CONFIRMED
             ).exists()

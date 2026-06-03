@@ -12,8 +12,8 @@ from .selectors import get_published_sessions, get_session_by_id, get_creator_se
 from .serializers import SessionListSerializer, SessionDetailSerializer, SessionWriteSerializer
 from .services import create_session, update_session, cancel_session, delete_session
 from .permissions import IsSessionCreatorOrReadOnly
-from apps.common.pagination import StandardResultsPagination
-from apps.common.constants import MSG_ONLY_CREATORS, MSG_SESSION_NOT_FOUND
+from ..common.pagination import StandardResultsPagination
+from ..common.constants import MSG_ONLY_CREATORS, MSG_SESSION_NOT_FOUND
 
 
 class SessionCatalogView(APIView):

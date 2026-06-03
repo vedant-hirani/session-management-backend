@@ -4,7 +4,7 @@ All ORM queries live here, not in views or services.
 """
 from django.db.models import QuerySet, Count, Q
 
-from apps.common.constants import SESSION_PUBLISHED, BOOKING_CONFIRMED
+from ..common.constants import SESSION_PUBLISHED, BOOKING_CONFIRMED
 from .models import Session
 
 

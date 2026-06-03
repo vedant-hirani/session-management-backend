@@ -3,7 +3,7 @@ Serializers for the bookings app.
 """
 from rest_framework import serializers
 
-from apps.sessions.serializers import SessionListSerializer
+from ..sessions.serializers import SessionListSerializer
 from .models import Booking
 
 

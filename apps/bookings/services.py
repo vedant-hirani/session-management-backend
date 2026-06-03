@@ -4,7 +4,7 @@ Business logic for the bookings app.
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 
-from apps.common.constants import (
+from ..common.constants import (
     BOOKING_CONFIRMED,
     BOOKING_CANCELLED,
     SESSION_PUBLISHED,
@@ -16,7 +16,7 @@ from apps.common.constants import (
     MSG_BOOKING_ALREADY_CANCELLED,
     MSG_CANNOT_CANCEL_DELETED_SESSION,
 )
-from apps.sessions.models import Session
+from ..sessions.models import Session
 from .models import Booking
 
 

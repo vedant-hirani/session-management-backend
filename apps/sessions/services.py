@@ -3,7 +3,7 @@ Business logic for the sessions app.
 """
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from apps.common.constants import (
+from ..common.constants import (
     SESSION_CANCELLED,
     BOOKING_CANCELLED,
     MSG_ONLY_CREATORS,
@@ -89,7 +89,7 @@ def restore_session(session: Session, creator) -> Session:
 def _refund_confirmed_bookings(session: Session) -> None:
     """Cancel all confirmed bookings for a session and refund users."""
     from decimal import Decimal
-    from apps.common.constants import BOOKING_CONFIRMED
+    from ..common.constants import BOOKING_CONFIRMED
 
     confirmed_bookings = session.bookings.filter(status=BOOKING_CONFIRMED)
     for booking in confirmed_bookings:

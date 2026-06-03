@@ -82,7 +82,7 @@ class OAuthSetupView(APIView):
         )
 
 
-from apps.common.constants import MSG_REFRESH_TOKEN_REQUIRED, MSG_INVALID_TOKEN, MSG_LOGGED_OUT
+from ..common.constants import MSG_REFRESH_TOKEN_REQUIRED, MSG_INVALID_TOKEN, MSG_LOGGED_OUT
 
 
 class LogoutView(APIView):
