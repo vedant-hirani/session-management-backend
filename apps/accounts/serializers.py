@@ -79,3 +79,29 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class OAuthSetupSerializer(serializers.ModelSerializer):
+    """
+    Used after Google OAuth for brand-new users.
+    Lets them confirm/set their username and choose a role.
+    Role is fixed permanently after this step.
+    """
+    role = serializers.ChoiceField(choices=["user", "creator"])
+    username = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = User
+        fields = ["username", "role"]
+
+    def validate_username(self, value):
+        user = self.instance
+        if User.objects.exclude(pk=user.pk).filter(username=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.username = validated_data["username"]
+        instance.role = validated_data["role"]
+        instance.save(update_fields=["username", "role"])
+        return instance

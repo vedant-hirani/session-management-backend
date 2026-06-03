@@ -6,13 +6,15 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from core.jwt import generate_tokens, blacklist_refresh_token
-from .serializers import UserProfileSerializer, RegisterSerializer
+from .serializers import UserProfileSerializer, RegisterSerializer, OAuthSetupSerializer
 from .services import update_user_profile
 from .permissions import IsSelfOrAdmin
 
@@ -21,20 +23,63 @@ User = get_user_model()
 
 class OAuthCompleteView(APIView):
     """
-    Called after social-auth completes OAuth.
-    Issues JWT tokens and redirects the frontend with them as query params.
+    GET /api/v1/auth/oauth/complete/
+    Fallback endpoint after social-auth completes OAuth.
+    The primary flow uses the pipeline step (issue_jwt_and_redirect) which
+    redirects directly to the frontend. This view is kept as a safety net.
+    - Issues JWT tokens
+    - If the user is brand-new (needs role setup), redirects with ?needs_setup=1
+    - Otherwise redirects straight to the dashboard
     """
+    # Accept session auth (set by social_django after OAuth) AND JWT
+    authentication_classes = [SessionAuthentication, JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tokens = generate_tokens(request.user)
         frontend_url = settings.FRONTEND_URL
+
+        # Check if the social-auth pipeline flagged this as a new user
+        is_new = request.session.pop("oauth_new_user", False)
+
         redirect_url = (
             f"{frontend_url}/auth/callback"
             f"?access={tokens['access']}"
             f"&refresh={tokens['refresh']}"
         )
+        if is_new:
+            redirect_url += "&needs_setup=1"
+
         return redirect(redirect_url)
+
+
+class OAuthSetupView(APIView):
+    """
+    POST /api/v1/auth/oauth/setup/
+    Called after Google OAuth for brand-new users.
+    Lets them set their username and choose their role (user | creator).
+    Body: { "username": "...", "role": "user"|"creator" }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = OAuthSetupSerializer(
+            request.user,
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        # Re-issue tokens so role is baked into the new JWT
+        tokens = generate_tokens(user)
+        return Response(
+            {
+                **tokens,
+                "role": user.role,
+                "email": user.email,
+                "user_id": user.id,
+            }
+        )
 
 
 class LogoutView(APIView):

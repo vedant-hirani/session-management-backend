@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "social_django",
     # Local apps
@@ -125,7 +126,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": os.environ.get("DJANGO_SECRET_KEY", "changeme-insecure-default-key"),
     "AUTH_HEADER_TYPES": ("Bearer",),
@@ -145,17 +146,42 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.auth_allowed",
     "social_core.pipeline.social_auth.social_user",
     "social_core.pipeline.user.get_username",
+    # If a user with the same email already exists (e.g. registered via
+    # email/password), link the social account to that user instead of
+    # creating a duplicate — prevents AuthAlreadyAssociated.
+    "social_core.pipeline.social_auth.associate_by_email",
     "social_core.pipeline.user.create_user",
     "social_core.pipeline.social_auth.associate_user",
     "social_core.pipeline.social_auth.load_extra_data",
     "social_core.pipeline.user.user_details",
     "core.auth.save_avatar_from_oauth",
+    # Final step: issues JWT tokens and redirects directly to the frontend.
+    # Replaces the old mark_new_oauth_user + SOCIAL_AUTH_LOGIN_REDIRECT_URL flow.
+    "core.auth.issue_jwt_and_redirect",
 )
 
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/api/v1/auth/oauth/complete/"
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ["email", "profile"]
 SOCIAL_AUTH_GITHUB_SCOPE = ["user:email"]
+
+# Force the exact callback URL Django sends to Google.
+SOCIAL_AUTH_GOOGLE_OAUTH2_CALLBACK_URL = "http://127.0.0.1:8000/social/complete/google-oauth2/"
+
+# Store OAuth state in the DB instead of the session.
+# This fixes AuthStateMissing when the browser is redirected back directly
+# to 127.0.0.1:8000 (different origin from the Vite proxy at localhost:3000)
+# and the session cookie is not present.
+SOCIAL_AUTH_STRATEGY = "social_django.strategy.DjangoStrategy"
+SOCIAL_AUTH_STORAGE = "social_django.models.DjangoStorage"
+SOCIAL_AUTH_STATE_PARAMETER = True
+SOCIAL_AUTH_SESSION_EXPIRATION = False
+
+# Session cookie — Lax is correct for OAuth flows (top-level GET navigations
+# always send the cookie).  "None" without Secure=True causes Chrome 80+ to
+# REJECT the cookie entirely, which loses the OAuth state.
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # --- CORS ---
 CORS_ALLOWED_ORIGINS = os.environ.get(
