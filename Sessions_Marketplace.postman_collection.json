@@ -1,0 +1,515 @@
+{
+  "info": {
+    "name": "Sessions Marketplace API",
+    "_postman_id": "sessions-marketplace-v2",
+    "description": "Full API collection with auto token management.\n\n**HOW TO USE:**\n1. Import this collection\n2. Run '🔑 Get Creator Token' first — tokens auto-save\n3. Run '🔑 Get User Token' second\n4. All other requests use tokens automatically\n\n**Test Accounts (Supabase Remote DB):**\n- Creator: username=creator1 / password=creator123\n- User:    username=testuser / password=user123\n- Admin:   username=admin    / password=admin123\n\n**Environments:**\n- Local dev: base_url = http://127.0.0.1:8000\n- Render:    base_url = https://your-app.onrender.com",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",        "value": "http://127.0.0.1:8000", "type": "string" },
+    { "key": "creator_access",  "value": "", "type": "string" },
+    { "key": "creator_refresh", "value": "", "type": "string" },
+    { "key": "user_access",     "value": "", "type": "string" },
+    { "key": "user_refresh",    "value": "", "type": "string" },
+    { "key": "session_id",      "value": "2", "type": "string" },
+    { "key": "booking_id",      "value": "2", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔑 Step 1 — Get Tokens (Run These First)",
+      "item": [
+        {
+          "name": "Get Creator Token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var j = pm.response.json();",
+                "pm.collectionVariables.set('creator_access',  j.access);",
+                "pm.collectionVariables.set('creator_refresh', j.refresh);",
+                "pm.test('Creator token saved', () => pm.response.to.have.status(200));",
+                "console.log('✅ Creator token saved automatically');"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"creator1\",\n  \"password\": \"creator123\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/auth/token/", "host": ["{{base_url}}"], "path": ["api","v1","auth","token",""] },
+            "description": "Gets JWT for creator@test.com. Token auto-saved to collection variables."
+          }
+        },
+        {
+          "name": "Get User Token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var j = pm.response.json();",
+                "pm.collectionVariables.set('user_access',  j.access);",
+                "pm.collectionVariables.set('user_refresh', j.refresh);",
+                "pm.test('User token saved', () => pm.response.to.have.status(200));",
+                "console.log('✅ User token saved automatically');"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"user123\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/auth/token/", "host": ["{{base_url}}"], "path": ["api","v1","auth","token",""] },
+            "description": "Gets JWT for user@test.com. Token auto-saved to collection variables."
+          }
+        },
+        {
+          "name": "Refresh Creator Access Token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var j = pm.response.json();",
+                "if(j.access) { pm.collectionVariables.set('creator_access', j.access); }",
+                "pm.test('Token refreshed', () => pm.response.to.have.status(200));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refresh\": \"{{creator_refresh}}\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/auth/token/refresh/", "host": ["{{base_url}}"], "path": ["api","v1","auth","token","refresh",""] }
+          }
+        },
+        {
+          "name": "Refresh User Access Token",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "var j = pm.response.json();",
+                "if(j.access) { pm.collectionVariables.set('user_access', j.access); }",
+                "pm.test('Token refreshed', () => pm.response.to.have.status(200));"
+              ],
+              "type": "text/javascript"
+            }
+          }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refresh\": \"{{user_refresh}}\"\n}" },
+            "url": { "raw": "{{base_url}}/api/v1/auth/token/refresh/", "host": ["{{base_url}}"], "path": ["api","v1","auth","token","refresh",""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth & Profile",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Status ok',()=>pm.expect(pm.response.json().status).to.eql('ok'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/auth/health/","host":["{{base_url}}"],"path":["api","v1","auth","health",""]}
+          }
+        },
+        {
+          "name": "Get My Profile (Creator)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has email',()=>pm.expect(pm.response.json()).to.have.property('email'));","pm.test('Role is creator',()=>pm.expect(pm.response.json().role).to.eql('creator'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/","host":["{{base_url}}"],"path":["api","v1","auth","profile",""]}
+          }
+        },
+        {
+          "name": "Get My Profile (User)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Role is user',()=>pm.expect(pm.response.json().role).to.eql('user'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/","host":["{{base_url}}"],"path":["api","v1","auth","profile",""]}
+          }
+        },
+        {
+          "name": "Update Profile (Creator)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Name updated',()=>pm.expect(pm.response.json().first_name).to.eql('Creator'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "PATCH",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"first_name\": \"Creator\",\n  \"last_name\": \"One\",\n  \"bio\": \"I teach yoga, coding, and music.\",\n  \"avatar\": \"https://i.pravatar.cc/150?u=creator\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/","host":["{{base_url}}"],"path":["api","v1","auth","profile",""]}
+          }
+        },
+        {
+          "name": "Switch Role → Creator",
+          "event": [{"listen":"test","script":{"exec":["var j=pm.response.json();","if(j.access){pm.collectionVariables.set('user_access',j.access);}","if(j.refresh){pm.collectionVariables.set('user_refresh',j.refresh);}","pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Role is creator',()=>pm.expect(j.role).to.eql('creator'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"role\": \"creator\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/role/","host":["{{base_url}}"],"path":["api","v1","auth","profile","role",""]}
+          }
+        },
+        {
+          "name": "Switch Role → User (revert)",
+          "event": [{"listen":"test","script":{"exec":["var j=pm.response.json();","if(j.access){pm.collectionVariables.set('user_access',j.access);}","if(j.refresh){pm.collectionVariables.set('user_refresh',j.refresh);}","pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Role reverted',()=>pm.expect(j.role).to.eql('user'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"role\": \"user\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/role/","host":["{{base_url}}"],"path":["api","v1","auth","profile","role",""]}
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"refresh\": \"{{user_refresh}}\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/logout/","host":["{{base_url}}"],"path":["api","v1","auth","logout",""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Sessions — CRUD",
+      "item": [
+        {
+          "name": "List All Sessions (Public — no token needed)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has pagination',()=>pm.expect(pm.response.json()).to.have.property('pagination'));","pm.test('Has results',()=>pm.expect(pm.response.json()).to.have.property('results'));","var first=pm.response.json().results[0];","if(first){pm.collectionVariables.set('session_id',first.id.toString());}"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/","host":["{{base_url}}"],"path":["api","v1","sessions",""]}
+          }
+        },
+        {
+          "name": "Search Sessions by title",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Results returned',()=>pm.expect(pm.response.json().results).to.be.an('array'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/?search=yoga","host":["{{base_url}}"],"path":["api","v1","sessions",""],"query":[{"key":"search","value":"yoga"}]}
+          }
+        },
+        {
+          "name": "Filter Sessions by tag",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/?tag=python","host":["{{base_url}}"],"path":["api","v1","sessions",""],"query":[{"key":"tag","value":"python"}]}
+          }
+        },
+        {
+          "name": "Filter Sessions by price range",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/?min_price=10&max_price=30","host":["{{base_url}}"],"path":["api","v1","sessions",""],"query":[{"key":"min_price","value":"10"},{"key":"max_price","value":"30"}]}
+          }
+        },
+        {
+          "name": "Get Session Detail (Public)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has title',()=>pm.expect(pm.response.json()).to.have.property('title'));","pm.test('Has spots_remaining',()=>pm.expect(pm.response.json()).to.have.property('spots_remaining'));","pm.test('Has creator',()=>pm.expect(pm.response.json()).to.have.property('creator'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/{{session_id}}/","host":["{{base_url}}"],"path":["api","v1","sessions","{{session_id}}",""]}
+          }
+        },
+        {
+          "name": "Create Session (Creator)",
+          "event": [{"listen":"test","script":{"exec":["var j=pm.response.json();","pm.collectionVariables.set('session_id',j.id.toString());","pm.test('Status 201',()=>pm.response.to.have.status(201));","pm.test('Title correct',()=>pm.expect(j.title).to.eql('Live Meditation'));","pm.test('Status published',()=>pm.expect(j.status).to.eql('published'));","console.log('New session_id saved: '+j.id);"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"title\": \"Live Meditation\",\n  \"description\": \"A calming 30-minute guided meditation session.\",\n  \"cover_image\": \"https://picsum.photos/seed/meditation/400/300\",\n  \"price\": \"9.99\",\n  \"duration_minutes\": 30,\n  \"max_attendees\": 20,\n  \"scheduled_at\": \"2026-10-01T07:00:00Z\",\n  \"status\": \"published\",\n  \"tags\": [\"meditation\", \"wellness\", \"mindfulness\"]\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/sessions/","host":["{{base_url}}"],"path":["api","v1","sessions",""]}
+          }
+        },
+        {
+          "name": "Update Session (Creator)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Price updated',()=>pm.expect(pm.response.json().price).to.eql('14.99'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "PATCH",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"price\": \"14.99\",\n  \"max_attendees\": 25,\n  \"description\": \"Updated: A calming 30-minute guided meditation for all levels.\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/sessions/{{session_id}}/","host":["{{base_url}}"],"path":["api","v1","sessions","{{session_id}}",""]}
+          }
+        },
+        {
+          "name": "Get My Sessions (Creator Dashboard)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has results',()=>pm.expect(pm.response.json().results).to.be.an('array'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/mine/","host":["{{base_url}}"],"path":["api","v1","sessions","mine",""]}
+          }
+        },
+        {
+          "name": "Cancel Session (Creator)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Status is cancelled',()=>pm.expect(pm.response.json().status).to.eql('cancelled'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "POST",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/{{session_id}}/cancel/","host":["{{base_url}}"],"path":["api","v1","sessions","{{session_id}}","cancel",""]}
+          }
+        },
+        {
+          "name": "Delete Session (Creator)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 204',()=>pm.response.to.have.status(204));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "DELETE",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/{{session_id}}/","host":["{{base_url}}"],"path":["api","v1","sessions","{{session_id}}",""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Bookings — CRUD",
+      "item": [
+        {
+          "name": "Book a Session (User)",
+          "event": [{"listen":"test","script":{"exec":["var j=pm.response.json();","if(j.id){pm.collectionVariables.set('booking_id',j.id.toString());}","pm.test('Status 201',()=>pm.response.to.have.status(201));","pm.test('Status confirmed',()=>pm.expect(j.status).to.eql('confirmed'));","pm.test('Has session nested',()=>pm.expect(j.session).to.have.property('title'));","console.log('booking_id saved: '+j.id);"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"session_id\": {{session_id}}\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/bookings/","host":["{{base_url}}"],"path":["api","v1","bookings",""]}
+          }
+        },
+        {
+          "name": "Get My Bookings — All (User Dashboard)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has pagination',()=>pm.expect(pm.response.json()).to.have.property('pagination'));","pm.test('Results is array',()=>pm.expect(pm.response.json().results).to.be.an('array'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/","host":["{{base_url}}"],"path":["api","v1","bookings",""]}
+          }
+        },
+        {
+          "name": "Get My Active Bookings Only",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","var results=pm.response.json().results;","pm.test('All confirmed',()=>results.forEach(b=>pm.expect(b.status).to.eql('confirmed')));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/?active=true","host":["{{base_url}}"],"path":["api","v1","bookings",""],"query":[{"key":"active","value":"true"}]}
+          }
+        },
+        {
+          "name": "Get Booking Detail",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has session',()=>pm.expect(pm.response.json()).to.have.property('session'));","pm.test('Has status',()=>pm.expect(pm.response.json()).to.have.property('status'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/{{booking_id}}/","host":["{{base_url}}"],"path":["api","v1","bookings","{{booking_id}}",""]}
+          }
+        },
+        {
+          "name": "Cancel a Booking (User)",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Status cancelled',()=>pm.expect(pm.response.json().status).to.eql('cancelled'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/{{booking_id}}/cancel/","host":["{{base_url}}"],"path":["api","v1","bookings","{{booking_id}}","cancel",""]}
+          }
+        },
+        {
+          "name": "Creator — All Bookings on My Sessions",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Status 200',()=>pm.response.to.have.status(200));","pm.test('Has pagination',()=>pm.expect(pm.response.json()).to.have.property('pagination'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/creator/","host":["{{base_url}}"],"path":["api","v1","bookings","creator",""]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚠️ Edge Cases & Error Handling",
+      "item": [
+        {
+          "name": "❌ No Token → 401 Unauthorized",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 401',()=>pm.response.to.have.status(401));","pm.test('Has detail msg',()=>pm.expect(pm.response.json()).to.have.property('detail'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/","host":["{{base_url}}"],"path":["api","v1","auth","profile",""]}
+          }
+        },
+        {
+          "name": "❌ Invalid Token → 401 Unauthorized",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 401',()=>pm.response.to.have.status(401));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"this.is.not.a.valid.token","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/","host":["{{base_url}}"],"path":["api","v1","auth","profile",""]}
+          }
+        },
+        {
+          "name": "❌ User Creates Session → 403 Forbidden",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 403',()=>pm.response.to.have.status(403));","pm.test('Has detail msg',()=>pm.expect(pm.response.json()).to.have.property('detail'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"title\": \"Fake Session\",\n  \"description\": \"User trying to create\",\n  \"price\": \"0\",\n  \"duration_minutes\": 30,\n  \"max_attendees\": 1,\n  \"scheduled_at\": \"2026-12-01T10:00:00Z\",\n  \"status\": \"published\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/sessions/","host":["{{base_url}}"],"path":["api","v1","sessions",""]}
+          }
+        },
+        {
+          "name": "❌ User Views Creator Dashboard → 403 Forbidden",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 403',()=>pm.response.to.have.status(403));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/mine/","host":["{{base_url}}"],"path":["api","v1","sessions","mine",""]}
+          }
+        },
+        {
+          "name": "❌ User Views Creator Bookings → 403 Forbidden",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 403',()=>pm.response.to.have.status(403));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/creator/","host":["{{base_url}}"],"path":["api","v1","bookings","creator",""]}
+          }
+        },
+        {
+          "name": "❌ Session Not Found → 404",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 404',()=>pm.response.to.have.status(404));","pm.test('Has detail msg',()=>pm.expect(pm.response.json()).to.have.property('detail'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/99999/","host":["{{base_url}}"],"path":["api","v1","sessions","99999",""]}
+          }
+        },
+        {
+          "name": "❌ Booking Not Found → 404",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 404',()=>pm.response.to.have.status(404));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "GET",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/99999/","host":["{{base_url}}"],"path":["api","v1","bookings","99999",""]}
+          }
+        },
+        {
+          "name": "❌ Double Book Same Session → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));","pm.test('Error message present',()=>pm.expect(pm.response.json()).to.have.property('detail'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"session_id\": 2\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/bookings/","host":["{{base_url}}"],"path":["api","v1","bookings",""]}
+          }
+        },
+        {
+          "name": "❌ Cancel Already Cancelled Booking → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "url": {"raw":"{{base_url}}/api/v1/bookings/{{booking_id}}/cancel/","host":["{{base_url}}"],"path":["api","v1","bookings","{{booking_id}}","cancel",""]}
+          }
+        },
+        {
+          "name": "❌ Creator Cancels Session Already Cancelled → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400 or 404',()=>pm.expect(pm.response.code).to.be.oneOf([400,404]));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "POST",
+            "url": {"raw":"{{base_url}}/api/v1/sessions/1/cancel/","host":["{{base_url}}"],"path":["api","v1","sessions","1","cancel",""]}
+          }
+        },
+        {
+          "name": "❌ Invalid Login Credentials → 401",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 401',()=>pm.response.to.have.status(401));","pm.test('Invalid credentials msg',()=>pm.expect(pm.response.json().detail).to.include('Invalid'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"username\": \"creator1\",\n  \"password\": \"wrongpassword\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/token/","host":["{{base_url}}"],"path":["api","v1","auth","token",""]}
+          }
+        },
+        {
+          "name": "❌ Missing Fields on Create Session → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));","pm.test('Has errors',()=>pm.expect(pm.response.json()).to.have.property('errors'));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"title\": \"Missing fields session\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/sessions/","host":["{{base_url}}"],"path":["api","v1","sessions",""]}
+          }
+        },
+        {
+          "name": "❌ Negative Price → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{creator_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"title\": \"Bad price\",\n  \"description\": \"test\",\n  \"price\": \"-10\",\n  \"duration_minutes\": 30,\n  \"max_attendees\": 1,\n  \"scheduled_at\": \"2026-12-01T10:00:00Z\",\n  \"status\": \"published\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/sessions/","host":["{{base_url}}"],"path":["api","v1","sessions",""]}
+          }
+        },
+        {
+          "name": "❌ Invalid Role Switch → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"role\": \"superadmin\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/profile/role/","host":["{{base_url}}"],"path":["api","v1","auth","profile","role",""]}
+          }
+        },
+        {
+          "name": "❌ Book Session With No session_id → 400",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 400',()=>pm.response.to.have.status(400));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{user_access}}","type":"string"}]},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{}"},
+            "url": {"raw":"{{base_url}}/api/v1/bookings/","host":["{{base_url}}"],"path":["api","v1","bookings",""]}
+          }
+        },
+        {
+          "name": "❌ Refresh with Invalid Token → 401",
+          "event": [{"listen":"test","script":{"exec":["pm.test('Must return 401',()=>pm.response.to.have.status(401));"],"type":"text/javascript"}}],
+          "request": {
+            "auth": {"type":"noauth"},
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"refresh\": \"this.is.totally.fake\"\n}"},
+            "url": {"raw":"{{base_url}}/api/v1/auth/token/refresh/","host":["{{base_url}}"],"path":["api","v1","auth","token","refresh",""]}
+          }
+        }
+      ]
+    }
+  ]
+}
