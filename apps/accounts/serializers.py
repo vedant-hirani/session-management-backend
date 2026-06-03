@@ -42,14 +42,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return value
 
 
-class RoleSwitchSerializer(serializers.Serializer):
-    """Allows a user to switch their own role between user ↔ creator."""
-
-    role = serializers.ChoiceField(choices=["user", "creator"])
-
-
 class RegisterSerializer(serializers.ModelSerializer):
-    """Register a new user with email, username, password, and optional role."""
+    """Register a new user with email, username, password, and role (fixed at sign-up)."""
 
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True, label="Confirm password")

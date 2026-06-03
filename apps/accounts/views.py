@@ -10,11 +10,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from core.jwt import generate_tokens, blacklist_refresh_token
-from .serializers import UserProfileSerializer, RoleSwitchSerializer, RegisterSerializer
-from .services import update_user_profile, switch_user_role
+from .serializers import UserProfileSerializer, RegisterSerializer
+from .services import update_user_profile
 from .permissions import IsSelfOrAdmin
 
 User = get_user_model()
@@ -24,7 +23,6 @@ class OAuthCompleteView(APIView):
     """
     Called after social-auth completes OAuth.
     Issues JWT tokens and redirects the frontend with them as query params.
-    This view is wired into the social auth pipeline via SOCIAL_AUTH_LOGIN_REDIRECT_URL.
     """
     permission_classes = [IsAuthenticated]
 
@@ -79,25 +77,6 @@ class ProfileView(APIView):
         return Response(UserProfileSerializer(user, context={"request": request}).data)
 
 
-class RoleSwitchView(APIView):
-    """Allow a user to switch their role between 'user' and 'creator'."""
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = RoleSwitchSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = switch_user_role(request.user, serializer.validated_data["role"])
-        # Re-issue tokens with updated role claim
-        tokens = generate_tokens(user)
-        return Response(
-            {
-                "detail": f"Role updated to {user.role}.",
-                "role": user.role,
-                **tokens,
-            }
-        )
-
-
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def health_check(request):
@@ -109,6 +88,7 @@ class RegisterView(APIView):
     """
     POST /api/v1/auth/register/
     Body: { "email": "...", "username": "...", "password": "...", "password2": "...", "role": "user"|"creator" }
+    Role is chosen at registration and is permanently fixed — it cannot be changed afterwards.
     Returns: { "access": "...", "refresh": "...", "role": "...", "email": "...", "user_id": ... }
     """
     permission_classes = [AllowAny]
