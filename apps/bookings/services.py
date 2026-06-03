@@ -42,7 +42,20 @@ def cancel_booking(booking: Booking, user) -> Booking:
 
     if booking.status == BOOKING_CANCELLED:
         raise ValidationError("Booking is already cancelled.")
+    
+    # Check if session is already cancelled or deleted
+    from apps.common.constants import SESSION_CANCELLED
+    if booking.session.status == SESSION_CANCELLED or booking.session.is_deleted:
+        raise ValidationError("Cannot cancel booking for a cancelled or deleted session.")
 
     booking.status = BOOKING_CANCELLED
     booking.save(update_fields=["status"])
+    
+    # Refund the amount to user's wallet
+    from decimal import Decimal
+    price = Decimal(str(booking.session.price))
+    balance = Decimal(str(booking.user.wallet_balance))
+    booking.user.wallet_balance = balance + price
+    booking.user.save(update_fields=["wallet_balance"])
+
     return booking

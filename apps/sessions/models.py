@@ -31,6 +31,7 @@ class Session(models.Model):
         default=SESSION_PUBLISHED,
     )
     tags = models.JSONField(default=list, blank=True)
+    is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

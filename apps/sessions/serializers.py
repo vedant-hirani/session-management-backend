@@ -21,6 +21,7 @@ class SessionListSerializer(serializers.ModelSerializer):
             "cover_image",
             "price",
             "duration_minutes",
+            "max_attendees",
             "scheduled_at",
             "status",
             "tags",

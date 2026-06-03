@@ -13,6 +13,7 @@ class User(AbstractUser):
     - role: 'user' or 'creator'
     - avatar: URL or path to profile picture
     - bio: short description
+    - wallet_balance: user's wallet balance for refunds and payments
     """
 
     class Role(models.TextChoices):
@@ -27,6 +28,11 @@ class User(AbstractUser):
     )
     avatar = models.URLField(blank=True, null=True)
     bio = models.TextField(blank=True, default="")
+    wallet_balance = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]

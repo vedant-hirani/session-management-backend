@@ -10,7 +10,7 @@ from .models import Session
 
 def get_published_sessions(filters: dict = None) -> QuerySet:
     """Return all published sessions, optionally filtered."""
-    qs = Session.objects.filter(status=SESSION_PUBLISHED).select_related("creator")
+    qs = Session.objects.filter(status=SESSION_PUBLISHED, is_deleted=False).select_related("creator")
     if filters:
         if tag := filters.get("tag"):
             qs = qs.filter(tags__contains=[tag])
@@ -27,9 +27,19 @@ def get_published_sessions(filters: dict = None) -> QuerySet:
 
 def get_session_by_id(session_id: int) -> Session:
     """Return a single session by PK, or raise DoesNotExist."""
-    return Session.objects.select_related("creator").get(pk=session_id)
+    return Session.objects.filter(is_deleted=False).select_related("creator").get(pk=session_id)
 
 
 def get_creator_sessions(creator) -> QuerySet:
     """Return all sessions owned by a creator (any status)."""
+    return Session.objects.filter(creator=creator, is_deleted=False).order_by("-created_at")
+
+
+def get_deleted_sessions(creator) -> QuerySet:
+    """Return all soft-deleted sessions owned by a creator."""
+    return Session.objects.filter(creator=creator, is_deleted=True).order_by("-created_at")
+
+
+def get_all_sessions(creator) -> QuerySet:
+    """Return all sessions owned by a creator including deleted ones."""
     return Session.objects.filter(creator=creator).order_by("-created_at")
