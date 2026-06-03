@@ -197,13 +197,16 @@ SOCIAL_AUTH_PIPELINE = (
     "core.auth.issue_jwt_and_redirect",
 )
 
-SOCIAL_AUTH_REDIRECT_IS_HTTPS = False
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = os.environ.get("SOCIAL_AUTH_REDIRECT_IS_HTTPS", "False") == "True"
 SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/api/v1/auth/oauth/complete/"
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ["email", "profile"]
 SOCIAL_AUTH_GITHUB_SCOPE = ["user:email"]
 
 # Force the exact callback URL Django sends to Google.
-SOCIAL_AUTH_GOOGLE_OAUTH2_CALLBACK_URL = "http://127.0.0.1:8000/social/complete/google-oauth2/"
+SOCIAL_AUTH_GOOGLE_OAUTH2_CALLBACK_URL = os.environ.get(
+    "SOCIAL_AUTH_GOOGLE_OAUTH2_CALLBACK_URL",
+    "http://127.0.0.1:8000/social/complete/google-oauth2/"
+)
 
 # Store OAuth state in the DB instead of the session.
 # This fixes AuthStateMissing when the browser is redirected back directly
