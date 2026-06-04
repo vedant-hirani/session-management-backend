@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "social_django",
+    "storages",
     # Local apps
     "apps.accounts.apps.AccountsConfig",
     "apps.sessions.apps.SessionsConfig",
@@ -246,3 +247,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Frontend URL ---
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+

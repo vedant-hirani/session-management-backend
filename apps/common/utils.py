@@ -24,54 +24,49 @@ def build_absolute_uri(request, path: str) -> str:
 
 def upload_file_to_s3_or_local(request, file_obj, subfolder='uploads'):
     """
-    Uploads a file to MinIO/S3 if credentials are provided in the environment.
+    Uploads a file to Cloudinary if credentials (either CLOUDINARY_URL or keys)
+    are provided in the environment.
     Otherwise, falls back to Django's local media storage.
     Returns the absolute URL of the uploaded file.
     """
-    import boto3
-    from botocore.client import Config
+    import cloudinary
+    import cloudinary.uploader
     from django.conf import settings
     from django.core.files.storage import FileSystemStorage
 
-    aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
-    aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-    bucket_name = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-    endpoint_url = os.environ.get('AWS_S3_ENDPOINT_URL')  # e.g., http://localhost:9000 for MinIO
-    region_name = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    cloudinary_url = os.environ.get('CLOUDINARY_URL')
+    cloudinary_cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    cloudinary_api_key = os.environ.get('CLOUDINARY_API_KEY')
+    cloudinary_api_secret = os.environ.get('CLOUDINARY_API_SECRET')
 
-    ext = os.path.splitext(file_obj.name)[1].lower()
-    unique_filename = f"{uuid.uuid4().hex}{ext}"
-    key_path = f"{subfolder}/{unique_filename}"
-
-    if aws_access_key and aws_secret_key and bucket_name:
+    if cloudinary_url or (cloudinary_cloud_name and cloudinary_api_key and cloudinary_api_secret):
         try:
-            s3_client = boto3.client(
-                's3',
-                aws_access_key_id=aws_access_key,
-                aws_secret_access_key=aws_secret_key,
-                endpoint_url=endpoint_url,
-                region_name=region_name,
-                config=Config(signature_version='s3v4')
-            )
-            # Upload the file
-            s3_client.upload_fileobj(
-                file_obj,
-                bucket_name,
-                key_path,
-                ExtraArgs={
-                    'ContentType': getattr(file_obj, 'content_type', 'image/jpeg'),
-                }
-            )
-            # Return URL
-            if endpoint_url:
-                endpoint_clean = endpoint_url.rstrip('/')
-                return f"{endpoint_clean}/{bucket_name}/{key_path}"
+            # Configure Cloudinary
+            if cloudinary_url:
+                # If CLOUDINARY_URL is present, SDK will automatically read it.
+                # Just in case, we can set it explicitly or config secure=True
+                cloudinary.config(secure=True)
             else:
-                return f"https://{bucket_name}.s3.{region_name}.amazonaws.com/{key_path}"
+                cloudinary.config(
+                    cloud_name=cloudinary_cloud_name,
+                    api_key=cloudinary_api_key,
+                    api_secret=cloudinary_api_secret,
+                    secure=True
+                )
+            # Upload the file directly to Cloudinary
+            upload_result = cloudinary.uploader.upload(
+                file_obj,
+                folder=subfolder
+            )
+            secure_url = upload_result.get("secure_url")
+            if secure_url:
+                return secure_url
         except Exception as e:
-            print(f"S3/MinIO upload failed: {e}. Falling back to local storage.")
+            print(f"Cloudinary upload failed: {e}. Falling back to local storage.")
 
     # Fallback to local storage
+    ext = os.path.splitext(file_obj.name)[1].lower()
+    unique_filename = f"{uuid.uuid4().hex}{ext}"
     fs = FileSystemStorage(
         location=os.path.join(settings.MEDIA_ROOT, subfolder),
         base_url=f"{settings.MEDIA_URL}{subfolder}/"
@@ -79,4 +74,6 @@ def upload_file_to_s3_or_local(request, file_obj, subfolder='uploads'):
     saved_filename = fs.save(unique_filename, file_obj)
     local_relative_url = fs.url(saved_filename)
     return build_absolute_uri(request, local_relative_url)
+
+
 
