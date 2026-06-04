@@ -1,100 +1,128 @@
-# Sessions Marketplace - Backend API
+# Sessions Marketplace
 
-A Django REST Framework API for a marketplace where creators can host live sessions and users can book them.
+A modern, production-grade 1:1 session booking marketplace platform. Sessions Marketplace allows creators (mentors, architects, and developers) to configure and host custom slots, and allows users to search, filter, and book live sessions.
 
-## Features
+---
 
-- **User Authentication**
-  - JWT-based authentication (access + refresh tokens)
-  - Username/password registration and login
-  - OAuth support (Google, GitHub)
-  - Role-based access control (User, Creator)
-  - Profile management and role switching
+## 🏗️ System Architecture
 
-- **Sessions Management**
-  - Create, update, delete sessions (Creator only)
-  - Public session listing with search and filters
-  - Tag-based categorization
-  - Price range filtering
-  - Session scheduling and status management
-  - Automatic spots tracking
+The application is built as a decoupled Client-Server architecture:
 
-- **Bookings**
-  - Book sessions (User only)
-  - View booking history
-  - Cancel bookings
-  - Creator dashboard to view bookings on their sessions
-  - Prevent double-booking
+1. **Frontend Client**: React Single Page Application (SPA) built with **Vite**, utilizing custom CSS (no external utility frameworks) for performance and complete control, React Router v6 for clean path navigation, and Axios interceptors for JWT token lifecycle and automated refresh.
+2. **Backend API**: **Django REST Framework (DRF)** RESTful API, employing the service-layer and selector-layer design patterns to separate business logic and database queries.
+3. **Database Layer**: **Postgres** (fully remote-ready, compatible with Supabase and connection pooling).
+4. **Gateway**: **Nginx** acting as a unified gateway/reverse proxy on port `80` during containerized deployments.
 
-## Tech Stack
+---
 
-- **Framework:** Django 5.0.6 + Django REST Framework 3.15.2
-- **Database:** PostgreSQL (remote-ready, Supabase compatible)
-- **Authentication:** JWT (djangorestframework-simplejwt)
-- **OAuth:** Google, GitHub (social-auth-app-django)
-- **CORS:** django-cors-headers
+## ⚡ Key Technical Features & Enhancements
 
-## Setup
+* **Secure Authentication**: Fully environment-driven JSON Web Tokens (JWT) using `djangorestframework-simplejwt` (access token lifespan of 60 mins and refresh token lifespan of 7 days). Includes social Google and GitHub OAuth flow integration that resolves session-cookie and browser-isolation challenges (`AuthStateMissing`) by issuing tokens directly on redirect callback.
+* **Premium Interactive UI**: Premium dashboard catalog with search logic, asymmetric responsive grids, learn outcomes agenda builders, participant reviews, and a sticky booking sidebar.
+* **Mobile-Responsive Optimization**:
+  * **Unified Grid Filters**: The session filter bar adapts from a wide flex layout to a balanced `2x2` grid on mobile viewports.
+  * **Dynamic Viewport Height**: The sidebar drawer uses dynamic viewport styling (`100dvh`) to prevent address bars from truncating the logout buttons on iOS Safari and mobile Chrome.
+  * **Showcase Responsiveness**: Left showcase decorative panels slide out of view (`display: none`) below `768px` to focus user signup immediately.
+  * **Role Selector Cards**: Custom, interactive role cards replace generic select dropdowns during registration.
 
-### 1. Clone the repository
+---
+
+## 🛠️ Local Development Setup
+
+### Project Requirements
+* **Runtime**: Node.js v18+ and Python v3.10+
+* **Package Managers**: `pnpm` (or `npm`) & `pip`
+* **Services**: Postgres DB (local instance or Supabase URL)
+
+### 1. Database & Backend Configuration
+
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   # On macOS/Linux:
+   source venv/bin/activate
+   # On Windows (PowerShell):
+   .\venv\Scripts\Activate.ps1
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements/dev.txt
+   ```
+4. Copy the environment template and configure environment variables (verify no credentials are hardcoded):
+   ```bash
+   cp .env.example .env
+   ```
+5. Apply database migrations:
+   ```bash
+   python manage.py migrate
+   ```
+6. Create an administrator account:
+   ```bash
+   python manage.py createsuperuser
+   ```
+7. Fire up the API development server:
+   ```bash
+   python manage.py runserver
+   ```
+   *The API will run at `http://127.0.0.1:8000/api/v1/`.*
+
+### 2. Frontend Configuration
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install npm dependencies:
+   ```bash
+   pnpm install  # or npm install
+   ```
+3. Create a `.env` file to configure the API base url:
+   ```bash
+   echo "VITE_API_BASE_URL=http://127.0.0.1:8000" > .env
+   ```
+4. Start the Vite hot-reloaded development server:
+   ```bash
+   pnpm run dev  # or npm run dev
+   ```
+   *The client application will run at `http://localhost:5173/`.*
+
+---
+
+## 🐳 Running with Docker Compose (inside `backend` directory)
+
+To spin up the entire application stack (Backend API, React Client, and Local Postgres DB) with Nginx proxying, execute from this `backend` directory:
 
 ```bash
-git clone https://github.com/vedant-hirani/session-management-backend.git
-cd session-management-backend
+docker-compose up --build
 ```
+*After running, open `http://localhost` in your browser. Nginx acts as the reverse-proxy, routing API calls to the Django container and web pages to the Vite container.*
 
-### 2. Create a virtual environment
+---
 
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+## 🔐 Environment Variables Blueprint
 
-### 3. Install dependencies
+All credentials, endpoints, and secrets are fully environment-driven. The following parameters should be populated in production:
 
-```bash
-pip install -r requirements/dev.txt
-```
+### Backend Environments (`backend/.env`)
+* `DJANGO_SETTINGS_MODULE`: Set to `config.settings.prod` for secure checks.
+* `DJANGO_SECRET_KEY`: Long, random cryptographic key.
+* `DATABASE_URL`: Connection string for Postgres (Supabase).
+* `POSTGRES_SSLMODE`: Set to `require` for encrypted remote database connections.
+* `FRONTEND_URL`: URL of the deployed React application (e.g. `https://app.sessions.com`).
+* `CORS_ALLOWED_ORIGINS`: Comma-separated list of origins permitted to request resource sharing.
+* `CLOUDINARY_URL`: Cloudinary environment integration URL for profile & session file storage.
+* `GOOGLE_OAUTH2_CLIENT_ID` & `GOOGLE_OAUTH2_CLIENT_SECRET`: Credentials for social sign-on.
 
-### 4. Configure environment variables
+### Frontend Environments (`frontend/.env`)
+* `VITE_API_BASE_URL`: Full base domain of the backend API (e.g. `https://api.sessions.com`).
 
-Copy `.env.example` to `.env` and fill in your values:
+---
 
-```bash
-cp .env.example .env
-```
-
-**Required variables:**
-```
-DJANGO_SECRET_KEY=your-secret-key-here
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-db-password
-POSTGRES_HOST=db.your-project.supabase.co
-POSTGRES_PORT=5432
-```
-
-### 5. Run migrations
-
-```bash
-python manage.py migrate
-```
-
-### 6. Create a superuser
-
-```bash
-python manage.py createsuperuser
-```
-
-### 7. Start the development server
-
-```bash
-python manage.py runserver
-```
-
-The API will be available at `http://127.0.0.1:8000/api/v1/`
-
-## API Documentation
+## 📑 API Endpoints Documentation
 
 ### Authentication Endpoints
 
@@ -130,91 +158,47 @@ The API will be available at `http://127.0.0.1:8000/api/v1/`
 | `/bookings/{id}/cancel/` | POST | User | Cancel booking |
 | `/bookings/creator/` | GET | Creator | View bookings on my sessions |
 
-## Testing
+---
 
-### Run tests
+## 🧪 Testing
+
+### Run backend tests
+From the `backend` directory, run:
 ```bash
 pytest
 ```
 
-### API Testing with Postman
+---
 
-Import the `Sessions_Marketplace.postman_collection.json` file into Postman.
-
-**Test accounts:**
-- Creator: `creator1` / `creator123`
-- User: `testuser` / `user123`
-
-## Deployment
-
-### Environment Variables for Production
-
-Set these in your hosting platform (Render, Railway, etc.):
-
-```
-DJANGO_SETTINGS_MODULE=config.settings.prod
-DJANGO_SECRET_KEY=<generate-a-long-random-string>
-POSTGRES_HOST=<your-db-host>
-POSTGRES_PORT=5432
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<your-db-password>
-POSTGRES_SSLMODE=require
-ALLOWED_HOSTS=your-app.onrender.com
-FRONTEND_URL=https://your-frontend.vercel.app
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
-```
-
-### Deployment Commands
-
-```bash
-# Install production dependencies
-pip install -r requirements/prod.txt
-
-# Collect static files
-python manage.py collectstatic --noinput
-
-# Run migrations
-python manage.py migrate
-
-# Start with Gunicorn
-gunicorn config.wsgi:application --bind 0.0.0.0:8000
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 backend/
 ├── apps/
-│   ├── accounts/      # User authentication, profiles
-│   ├── sessions/      # Session management
-│   ├── bookings/      # Booking management
-│   └── common/        # Shared utilities
+│   ├── accounts/      # User authentication, profiles, and metadata
+│   ├── sessions/      # Session creation, search filters, and slots
+│   ├── bookings/      # Booking logs and cancellations
+│   └── common/        # Shared pagination and middlewares
 ├── config/
 │   ├── settings/
-│   │   ├── base.py    # Base settings
-│   │   ├── dev.py     # Development settings
+│   │   ├── base.py    # Common configurations
+│   │   ├── dev.py     # Local database settings
 │   │   └── prod.py    # Production settings
-│   ├── urls.py        # Root URL config
-│   └── wsgi.py        # WSGI config
-├── core/              # Core utilities (JWT, permissions)
-├── requirements/      # Dependencies
+│   └── urls.py        # Routing roots
+├── core/              # Global permissions and OAuth callbacks
+├── requirements/      # pip configurations
+├── docker-compose.yml # Prod container runner
+├── docker-compose.dev.yml # Dev DB-only container runner
+├── nginx.conf         # Gateway config
 ├── manage.py
-└── README.md
+└── README.md          # Unified project documentation
 ```
 
-## Architecture
+---
 
-- **Service Layer Pattern:** Business logic in `services.py`
-- **Selector Layer:** Query logic in `selectors.py`
-- **Permissions:** Custom permissions for role-based access
-- **Serializers:** Request/response validation
-- **Pagination:** Standardized pagination across endpoints
+## 🏛️ Design Patterns Used
 
-## License
-
-MIT
-
-## Support
-
-For issues or questions, open an issue on GitHub.
+* **Service Layer Pattern**: All business logic (e.g. creating bookings, cancelling sessions) is contained inside standalone `services.py` modules.
+* **Selector Layer Pattern**: Database reads and complex filter/sorting queries are isolated in `selectors.py` modules.
+* **Middlewares**: Custom request logging and CORS controls.
+* **Serializers**: Request/response validation mapping DB models.

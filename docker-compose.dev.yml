@@ -1,0 +1,28 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────
+# Dev-only compose: just the database.
+# Run Django locally with: python manage.py runserver
+# ─────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sessions_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sessions_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"          # exposed so local Django can reach it
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
