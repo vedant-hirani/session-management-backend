@@ -202,3 +202,84 @@ backend/
 * **Selector Layer Pattern**: Database reads and complex filter/sorting queries are isolated in `selectors.py` modules.
 * **Middlewares**: Custom request logging and CORS controls.
 * **Serializers**: Request/response validation mapping DB models.
+
+---
+
+## 🔑 Social OAuth Setup Guide
+
+To enable Google and GitHub social logins, configure OAuth credentials in the respective developer consoles and update your `.env` variables.
+
+### 1. Google OAuth2 Setup
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project or select an existing one.
+3. Navigate to **APIs & Services > Credentials**.
+4. Click **Configure Consent Screen**, choose **External**, fill in the application details, and add the scopes `.../auth/userinfo.email` and `.../auth/userinfo.profile`.
+5. Under **Credentials**, click **Create Credentials > OAuth client ID**.
+6. Select **Web application** as the Application Type.
+7. Add **Authorized Javascript Origins**:
+   * Development: `http://localhost:3000` (Vite dev server)
+8. Add **Authorized Redirect URIs**:
+   * Development: `http://127.0.0.1:8000/social/complete/google-oauth2/`
+   * Production: `https://<your-backend-domain>/social/complete/google-oauth2/`
+9. Save and copy the **Client ID** and **Client Secret** into your `backend/.env` file:
+   ```env
+   GOOGLE_OAUTH2_CLIENT_ID=your-google-client-id
+   GOOGLE_OAUTH2_CLIENT_SECRET=your-google-client-secret
+   ```
+
+### 2. GitHub OAuth Setup
+1. Log in to GitHub and go to **Settings > Developer Settings > OAuth Apps**.
+2. Click **New OAuth App**.
+3. Set **Homepage URL**:
+   * Development: `http://localhost:3000`
+4. Set **Authorization callback URL**:
+   * Development: `http://127.0.0.1:8000/social/complete/github/`
+   * Production: `https://<your-backend-domain>/social/complete/github/`
+5. Register the application, then generate a new **Client Secret**.
+6. Copy both keys into your `backend/.env` file:
+   ```env
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   ```
+
+---
+
+## 🏁 Example Demo Flow Walkthrough
+
+Follow this workflow to verify the end-to-end lifecycle of the Sessions Marketplace platform:
+
+### Step 1: User & Creator Registrations
+1. Open the React frontend client at `http://localhost:3000`.
+2. Go to the **Register** page.
+3. Register a creator user:
+   * Select the **Creator** card.
+   * Sign up with username `john_mentor`, email `john@example.com`, and a password.
+4. Open an incognito browser window or log out, then register a general attendee user:
+   * Select the **User / Attendee** card.
+   * Sign up with username `jane_learner`, email `jane@example.com`, and a password.
+
+### Step 2: Create a Session (As Creator)
+1. Log in as `john_mentor` (Creator).
+2. Go to the **Creator Dashboard** (or click "Create Session").
+3. Create a new session slot:
+   * **Title**: "1:1 Software Architecture & Scalability Deep-Dive"
+   * **Description**: "A personalized session focusing on Docker, system design patterns, and Django backend scalability."
+   * **Category**: "Software Engineering"
+   * **Price**: `$150`
+   * **Time Slot**: Select an upcoming date/time.
+4. Save to publish the session. It is now live in the global catalog.
+
+### Step 3: Browse and Book (As Attendee)
+1. Log in as `jane_learner` (User / Attendee) in your second browser window.
+2. Go to the **Explore Catalog** page.
+3. Search for "Architecture" or filter by the "Software Engineering" category.
+4. Locate John's session and click **View Details**.
+5. Select the configured slot from the booking sidebar and click **Book Session**.
+6. Once completed, check the **My Bookings** page to see the active status and details.
+
+### Step 4: Manage Bookings (As Creator)
+1. Switch back to the `john_mentor` session window.
+2. Navigate to **Creator Bookings** (My Sessions).
+3. Observe Jane's active booking listed under your session.
+4. (Optional) Test booking/session cancellation behavior using the **Cancel Session** or **Cancel Booking** actions.
+
