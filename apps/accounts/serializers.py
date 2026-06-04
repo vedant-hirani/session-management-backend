@@ -13,7 +13,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "avatar", "role"]
+        fields = ["id", "username", "first_name", "last_name", "avatar", "role", "company", "headline", "bio"]
         read_only_fields = fields
 
 
@@ -31,6 +31,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "role",
             "avatar",
             "bio",
+            "company",
+            "headline",
             "wallet_balance",
             "date_joined",
         ]

@@ -28,6 +28,8 @@ class User(AbstractUser):
     )
     avatar = models.URLField(blank=True, null=True)
     bio = models.TextField(blank=True, default="")
+    company = models.CharField(max_length=100, blank=True, default="")
+    headline = models.CharField(max_length=100, blank=True, default="")
     wallet_balance = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 

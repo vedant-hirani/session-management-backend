@@ -27,6 +27,9 @@ class SessionCatalogView(APIView):
         filters = {
             "search": request.query_params.get("search"),
             "tag": request.query_params.get("tag"),
+            "category": request.query_params.get("category"),
+            "is_featured": request.query_params.get("is_featured"),
+            "ordering": request.query_params.get("ordering"),
             "min_price": request.query_params.get("min_price"),
             "max_price": request.query_params.get("max_price"),
             "creator_id": request.query_params.get("creator_id"),
@@ -119,3 +122,26 @@ class CancelSessionView(APIView):
             return Response({"detail": MSG_SESSION_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
         cancelled = cancel_session(session, request.user)
         return Response(SessionDetailSerializer(cancelled, context={"request": request}).data)
+
+
+class FileUploadView(APIView):
+    """
+    POST /api/v1/sessions/upload/ → upload any image/file (e.g. cover_image)
+    Returns: {"url": "<uploaded-file-url>"}
+    """
+    permission_classes = [IsAuthenticated]
+    from rest_framework.parsers import MultiPartParser, FormParser
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return Response({"detail": "No file was uploaded."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from ..common.utils import upload_file_to_s3_or_local
+        try:
+            file_url = upload_file_to_s3_or_local(request, file_obj, subfolder="uploads")
+            return Response({"url": file_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

@@ -20,6 +20,11 @@ def get_published_sessions(filters: dict = None) -> QuerySet:
     if filters:
         if tag := filters.get("tag"):
             qs = qs.filter(tags__contains=[tag])
+        if category := filters.get("category"):
+            qs = qs.filter(category__iexact=category)
+        if is_featured := filters.get("is_featured"):
+            val = str(is_featured).lower() in ("true", "1", "yes")
+            qs = qs.filter(is_featured=val)
         if creator_id := filters.get("creator_id"):
             qs = qs.filter(creator_id=creator_id)
         if min_price := filters.get("min_price"):
@@ -27,7 +32,14 @@ def get_published_sessions(filters: dict = None) -> QuerySet:
         if max_price := filters.get("max_price"):
             qs = qs.filter(price__lte=max_price)
         if search := filters.get("search"):
-            qs = qs.filter(title__icontains=search)
+            qs = qs.filter(Q(title__icontains=search) | Q(creator__username__icontains=search) | Q(creator__first_name__icontains=search))
+        if ordering := filters.get("ordering"):
+            if ordering == "price-low":
+                qs = qs.order_by("price")
+            elif ordering == "price-high":
+                qs = qs.order_by("-price")
+            elif ordering == "newest":
+                qs = qs.order_by("-created_at")
     return qs
 
 

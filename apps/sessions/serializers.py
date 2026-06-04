@@ -28,6 +28,10 @@ class SessionListSerializer(serializers.ModelSerializer):
             "creator",
             "spots_remaining",
             "is_available",
+            "is_featured",
+            "rating",
+            "booking_count",
+            "category",
         ]
 
     def get_spots_remaining(self, obj):
@@ -64,6 +68,10 @@ class SessionDetailSerializer(serializers.ModelSerializer):
             "already_booked",
             "created_at",
             "updated_at",
+            "is_featured",
+            "rating",
+            "booking_count",
+            "category",
         ]
 
     def get_spots_remaining(self, obj):
@@ -99,6 +107,7 @@ class SessionWriteSerializer(serializers.ModelSerializer):
             "scheduled_at",
             "status",
             "tags",
+            "category",
         ]
 
     def validate_price(self, value):

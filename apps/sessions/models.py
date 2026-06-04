@@ -31,6 +31,10 @@ class Session(models.Model):
         default=SESSION_PUBLISHED,
     )
     tags = models.JSONField(default=list, blank=True)
+    is_featured = models.BooleanField(default=False)
+    rating = models.FloatField(default=4.9)
+    booking_count = models.PositiveIntegerField(default=0)
+    category = models.CharField(max_length=50, default="Tech")
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
